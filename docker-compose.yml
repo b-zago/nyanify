@@ -1,0 +1,15 @@
+services:
+  nyanify:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - 8000:8000
+    environment:
+      TOKEN: ${TOKEN}
+      HMAC_KEY: ${HMAC_KEY}
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src/
