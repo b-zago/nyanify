@@ -42,18 +42,17 @@ docker run -e TOKEN=... -e HMAC_KEY=... -p 8000:8000 nyanify
 ```python
 import hmac
 import hashlib
+import json
 import requests
 
 HMAC_KEY = "your_hmac_key"
 payload = {"receiver_id": 123456789, "message": "Hello!"}
-
-body = payload.model_dump_json()
+body = json.dumps(payload)
 sig = hmac.new(HMAC_KEY.encode(), body.encode(), hashlib.sha256).hexdigest()
-
 requests.post(
     "http://localhost:8000/webhook",
-    headers={"X-Nyanify-Signature": sig},
-    json=payload,
+    headers={"X-Nyanify-Signature": sig, "Content-Type": "application/json"},
+    data=body,
 )
 ```
 
