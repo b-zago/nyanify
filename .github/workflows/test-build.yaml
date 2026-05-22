@@ -1,6 +1,6 @@
 on:
   pull_request:
-    branches: [main, stage]
+    branches: [main, staging]
 
 jobs:
   test:
