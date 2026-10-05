@@ -1,0 +1,3 @@
+app: nyanify
+ssmPrefix: /clusters
+envFilesPrefix: .env
