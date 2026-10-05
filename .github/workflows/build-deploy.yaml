@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main, stage]
 
 jobs:
   deploy:
@@ -11,5 +11,5 @@ jobs:
       contents: read
     uses: b-zago/actions/.github/workflows/box-deployment.yml@v1
     with:
-      patToken: ${{ secrets.PAT_TOKEN }}
+      imageName: webserver
     secrets: inherit
