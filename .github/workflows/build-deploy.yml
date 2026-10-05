@@ -8,7 +8,7 @@ jobs:
   deploy:
     permissions:
       packages: write
-      contents: read
+      contents: write
     uses: b-zago/actions/.github/workflows/box-deployment.yml@v1
     with:
       imageName: webserver
