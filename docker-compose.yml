@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - 8000:8000
+      - 9000:9000   # metrics (local testing only)
     environment:
       TOKEN: ${TOKEN}
       HMAC_KEY: ${HMAC_KEY}
