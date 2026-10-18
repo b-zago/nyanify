@@ -18,9 +18,26 @@ class Payload(BaseModel):
     message: str
 
 
+# Alertmanager's webhook format (only the fields used here).
+# https://prometheus.io/docs/alerting/latest/configuration/#webhook_config
+class Alert(BaseModel):
+    status: str
+    labels: dict[str, str] = {}
+    annotations: dict[str, str] = {}
+
+
+class AlertmanagerPayload(BaseModel):
+    alerts: list[Alert] = []
+
+
 hmac_key = os.environ.get("HMAC_KEY")
 if not hmac_key:
     sys.exit("Missing HMAC_KEY!")
+
+# Optional, enables POST /alertmanager. Alertmanager can't sign requests with
+# HMAC, so it sends this token instead, and every alert goes to ALERT_RECEIVER_ID.
+alertmanager_token = os.environ.get("ALERTMANAGER_TOKEN")
+alert_receiver_id = os.environ.get("ALERT_RECEIVER_ID")
 
 # Metrics are served on their own port so they are never routed through the
 # public Gateway. Prometheus scrapes this port directly, in-cluster.
@@ -62,6 +79,41 @@ async def hook(
     else:
         res.status_code = status.HTTP_403_FORBIDDEN
         return {"message": "Nope"}
+
+
+@app.post("/alertmanager", status_code=200)
+async def alertmanager(
+    payload: AlertmanagerPayload,
+    res: Response,
+    authorization: Annotated[str | None, Header()] = None,
+):
+    if not alertmanager_token or not alert_receiver_id:
+        res.status_code = status.HTTP_404_NOT_FOUND
+        return {"message": "Not configured"}
+
+    if not hmac.compare_digest(authorization or "", f"Bearer {alertmanager_token}"):
+        res.status_code = status.HTTP_403_FORBIDDEN
+        return {"message": "Nope"}
+
+    lines = []
+    for a in payload.alerts:
+        prefix = "OOOPSIEEE" if a.status == "firing" else "nyaaaa~~ resolved"
+        summary = a.annotations.get("summary") or a.annotations.get("description", "")
+        lines.append(
+            f"{prefix} [{a.labels.get('severity', 'none')}] "
+            f"{a.labels.get('alertname', 'unknown')}: {summary}"
+        )
+    if not lines:
+        return {"message": "Nothing to send"}
+
+    try:
+        # Discord rejects messages over 2000 characters.
+        await discord_hook(alert_receiver_id, "\n".join(lines)[:2000])
+        return {"message": "Message sent!"}
+    except RequestError as e:
+        # A non-2xx response makes Alertmanager retry.
+        res.status_code = status.HTTP_502_BAD_GATEWAY
+        return {"message": f"Error occured while sending a message: {e}"}
 
 
 @app.get("/healthz")
