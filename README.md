@@ -61,7 +61,15 @@ Where `receiver_id` is a Discord user ID.
 ## Endpoints
 
 `POST /webhook` - Send a Discord DM
+`POST /alertmanager` - Forward Prometheus Alertmanager alerts as a Discord DM (optional, see below)
 `GET /healthcheck` - Health check
+
+## Alertmanager
+
+Alertmanager can't sign requests with HMAC, so `POST /alertmanager` accepts its standard webhook payload with a bearer token instead and sends every alert to one Discord user. It is enabled when both variables are set:
+
+`ALERTMANAGER_TOKEN` - Token Alertmanager sends as `Authorization: Bearer <token>`
+`ALERT_RECEIVER_ID` - Discord user ID that receives the alerts
 
 ## Notes
 
